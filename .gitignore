@@ -5,3 +5,5 @@ venv/
 *.sqlite3
 
 tailwindcss
+
+static/css/output.css
