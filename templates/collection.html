@@ -3,12 +3,18 @@
 {% block title %}{{ collection.name }} - Intellidoc{% endblock %}
 
 {% block body %}
-<form hx-post="/api/collection/{{collection.id}}/upload" hx-target="#documents" hx-swap="innerHTML">
-    <label for="document">Upload a file to this collection</label>
-    <input type="file" name="document" id="document">
-    <input type="submit" value="Submit">
-</form>
-<div id="collections">
+<div class="p-4">
+    <form hx-post="/api/collection/{{collection.id}}/upload" hx-target="#documents" hx-swap="innerHTML"
+        class="space-y-4 p-4 rounded-md shadow-md bg-white">
+        <label for="document" class="block text-sm font-medium text-gray-700">Upload a file to this collection</label>
+        <input type="file" name="document" id="document"
+            class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <input type="submit" value="Submit"
+            class="px-4 py-2 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+    </form>
+    <div id="documents">
 
+    </div>
 </div>
+
 {% endblock %}

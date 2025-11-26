@@ -1,3 +1,22 @@
-{% for collection in collections %}
-<p>{{ collection.name }}</p>
-{% endfor %}
+<table class="min-w-full table-auto border-collapse border border-gray-300">
+    <thead>
+        <tr class="bg-gray-100">
+            <th class="px-4 py-2 border border-gray-300 text-left font-medium text-gray-700">Collection</th>
+            <th class="px-4 py-2 border border-gray-300 text-left font-medium text-gray-700">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for collection in collections %}
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2 border border-gray-300">
+                <a href="/collections/{{ collection.id }}" class="text-blue-500 hover:underline">
+                    {{ collection.name }}
+                </a>
+            </td>
+            <td class="px-4 py-2 border border-gray-300">
+
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
