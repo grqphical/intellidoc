@@ -22,6 +22,7 @@ async def upload_file(request: Request, name: Annotated[str, Form()]):
     try:
         app.state.db.create_collection(name)
     except sqlite3.IntegrityError as e:
+        # a collection with the same name exists already
         if "UNIQUE constraint failed" in str(e):
             raise HTTPException(
                 status_code=400, detail=f"Collection with name {name} already exists"
@@ -43,7 +44,7 @@ async def root(request: Request):
 
 
 @app.get("/collections/{collection_id}", response_class=HTMLResponse)
-async def root(request: Request, collection_id: int):
+async def collections(request: Request, collection_id: int):
     collection = app.state.db.get_collection_by_id(collection_id)
     if collection == None:
         raise HTTPException(status_code=404, detail="Collection Not Found")

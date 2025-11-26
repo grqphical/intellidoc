@@ -36,6 +36,8 @@ class Document:
 
 
 class DatabaseHandler:
+    """Main class to interface with the SQLite Database"""
+
     def __init__(self):
         self.sqlite_conn = sqlite3.connect(DATABASE_URL, autocommit=True)
         self.sqlite_cursor = self.sqlite_conn.cursor()
@@ -46,6 +48,7 @@ class DatabaseHandler:
         self.sqlite_conn.autocommit
 
     def create_collection(self, name: str):
+        """Creates a collection with the given name"""
         current_time = datetime.now()
         self.sqlite_cursor.execute(
             "INSERT INTO collections (name, created_at) VALUES (?, ?);",
@@ -53,6 +56,7 @@ class DatabaseHandler:
         )
 
     def get_collections(self) -> list[Collection]:
+        """Returns all collections in the database"""
         self.sqlite_cursor.execute("SELECT id, name, created_at FROM collections;")
         rows = self.sqlite_cursor.fetchall()
         return [
@@ -63,6 +67,7 @@ class DatabaseHandler:
         ]
 
     def get_collection_by_id(self, collection_id: int) -> Collection | None:
+        """Returns a collection with the given ID. If a collection with the given ID doesn't exist, it simply returns None"""
         self.sqlite_cursor.execute(
             "SELECT id, name, created_at FROM collections WHERE id = ?;",
             (collection_id,),
