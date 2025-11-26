@@ -1,3 +1,5 @@
 .env
 *.pyc
 venv/
+
+*.sqlite3
