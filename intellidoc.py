@@ -1,8 +1,12 @@
-from fastapi import FastAPI, Request
+from typing import Annotated
+
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from database import DatabaseHandler
+
+import sqlite3
 
 app = FastAPI()
 
@@ -13,6 +17,26 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+@app.post("/api/collection")
+async def upload_file(request: Request, name: Annotated[str, Form()]):
+    try:
+        app.state.db.create_collection(name)
+    except sqlite3.IntegrityError as e:
+        if "UNIQUE constraint failed" in str(e):
+            raise HTTPException(
+                status_code=400, detail=f"Collection with name {name} already exists"
+            )
+    collections = app.state.db.get_collections()
+    return templates.TemplateResponse(
+        request=request,
+        name="collection_list.html",
+        context={"collections": collections},
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={})
+    collections = app.state.db.get_collections()
+    return templates.TemplateResponse(
+        request=request, name="index.html", context={"collections": collections}
+    )

@@ -3,5 +3,12 @@
 {% block title %}Intellidoc{% endblock %}
 
 {% block body %}
-<h1>Hello, World!</h1>
+<form hx-post="/api/collection" hx-target="#collections" hx-swap="innerHTML">
+    <label for="name">Collection Name:</label>
+    <input type="text" name="name" id="name">
+    <input type="submit" value="Submit">
+</form>
+<div id="collections">
+    {% include "collection_list.html" %}
+</div>
 {% endblock %}
