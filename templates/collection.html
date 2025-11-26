@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}{{ collection.name }} - Intellidoc{% endblock %}
+
+{% block body %}
+<form hx-post="/api/collection/{{collection.id}}/upload" hx-target="#documents" hx-swap="innerHTML">
+    <label for="document">Upload a file to this collection</label>
+    <input type="file" name="document" id="document">
+    <input type="submit" value="Submit">
+</form>
+<div id="collections">
+
+</div>
+{% endblock %}

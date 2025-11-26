@@ -40,3 +40,14 @@ async def root(request: Request):
     return templates.TemplateResponse(
         request=request, name="index.html", context={"collections": collections}
     )
+
+
+@app.get("/collections/{collection_id}", response_class=HTMLResponse)
+async def root(request: Request, collection_id: int):
+    collection = app.state.db.get_collection_by_id(collection_id)
+    if collection == None:
+        raise HTTPException(status_code=404, detail="Collection Not Found")
+
+    return templates.TemplateResponse(
+        request=request, name="collection.html", context={"collection": collection}
+    )

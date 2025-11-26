@@ -61,3 +61,15 @@ class DatabaseHandler:
             )
             for row in rows
         ]
+
+    def get_collection_by_id(self, collection_id: int) -> Collection | None:
+        self.sqlite_cursor.execute(
+            "SELECT id, name, created_at FROM collections WHERE id = ?;",
+            (collection_id,),
+        )
+        row = self.sqlite_cursor.fetchone()
+        if row:
+            return Collection(
+                id=row[0], name=row[1], created_at=datetime.fromisoformat(row[2])
+            )
+        return None
