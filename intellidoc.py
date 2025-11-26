@@ -8,7 +8,7 @@ from database import DatabaseHandler
 
 import sqlite3
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 
 app.state.db = DatabaseHandler()
 
