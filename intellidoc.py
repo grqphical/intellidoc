@@ -1,16 +1,28 @@
-from typing import Annotated
+from pathlib import Path
+import shutil
+from typing import Annotated, Dict
 
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    File,
+    Request,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from database import DatabaseHandler
+from ingestion import Job, ingest_document
 
 import sqlite3
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
 app.state.db = DatabaseHandler()
+app.state.job_store = {}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -18,7 +30,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.post("/api/collection")
-async def upload_file(request: Request, name: Annotated[str, Form()]):
+async def create_collection(request: Request, name: Annotated[str, Form()]):
     try:
         app.state.db.create_collection(name)
     except sqlite3.IntegrityError as e:
@@ -43,8 +55,8 @@ async def root(request: Request):
     )
 
 
-@app.get("/collections/{collection_id}", response_class=HTMLResponse)
-async def collections(request: Request, collection_id: int):
+@app.get("/collection/{collection_id}", response_class=HTMLResponse)
+async def get_collection(request: Request, collection_id: int):
     collection = app.state.db.get_collection_by_id(collection_id)
     if collection == None:
         raise HTTPException(status_code=404, detail="Collection Not Found")
@@ -52,3 +64,23 @@ async def collections(request: Request, collection_id: int):
     return templates.TemplateResponse(
         request=request, name="collection.html", context={"collection": collection}
     )
+
+
+@app.post("/api/collection/{collection_id}/upload")
+async def upload_file(
+    collection_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...)
+):
+    job = Job(filename=file.filename)
+    app.state.job_store[job.id] = job
+
+    # save file temporarily on disk
+    temp_dir = Path("temp_uploads")
+    temp_dir.mkdir(exist_ok=True)
+    file_path = temp_dir / f"{job.id}_{file.filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    background_tasks.add_task(ingest_document, job.id, file_path, app.state.job_store)
+
+    return "Great Success!"

@@ -7,3 +7,4 @@ venv/
 tailwindcss
 
 static/css/output.css
+temp_uploads/
