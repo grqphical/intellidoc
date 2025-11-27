@@ -12,7 +12,7 @@ Built with Python, FastAPI, SQLite 3, and LanceDB
 
 ## Installation
 
-Right now, the project is not 100% complete so for now just clone the repo, install the requirements and run the `intellidoc.py` script
+Right now, the project is not 100% complete so for now just clone the repo, install the requirements and run `fastapi dev intellidoc.py`
 
 ## License
 
