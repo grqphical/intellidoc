@@ -1,6 +1,6 @@
 from pathlib import Path
 import shutil
-from typing import Annotated, Dict
+from typing import Annotated
 
 from fastapi import (
     BackgroundTasks,
