@@ -14,15 +14,14 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from database import DatabaseHandler
-from ingestion import Job, ingest_document, JobStatus
+from database import DatabaseHandler, Job, JobStatus
+from ingestion import ingest_document
 
 import sqlite3
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
 app.state.db = DatabaseHandler()
-app.state.job_store = {}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -71,7 +70,7 @@ async def upload_file(
     collection_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
     job = Job(filename=file.filename)
-    app.state.job_store[job.id] = job
+    app.state.db.add_job(job)
 
     # save file temporarily on disk
     temp_dir = Path("temp_uploads")
@@ -90,7 +89,6 @@ async def upload_file(
         job.id,
         file_path,
         document_id,
-        app.state.job_store,
         app.state.db,
     )
 

@@ -1,6 +1,8 @@
 import sqlite3
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 DATABASE_URL = "intellidoc.sqlite3"
 
@@ -20,6 +22,14 @@ DOCUMENTS_SCHEMA = """CREATE TABLE IF NOT EXISTS documents (
         REFERENCES collections (id)
 );"""
 
+JOBS_SCHEMA = """CREATE TABLE IF NOT EXISTS jobs (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    status TEXT NOT NULL,
+    result TEXT
+);
+    """
+
 
 @dataclass
 class Collection:
@@ -34,6 +44,20 @@ class Document:
     filename: str
     status: str
 
+class JobStatus(str, Enum):
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class Job:
+    def __init__(self, filename: str):
+        self.id = str(uuid.uuid4())
+        self.filename = filename
+        self.status = JobStatus.QUEUED
+        self.result = None
+
 
 class DatabaseHandler:
     """Main class to interface with the SQLite Database"""
@@ -44,6 +68,7 @@ class DatabaseHandler:
 
         self.sqlite_cursor.execute(COLLECTIONS_SCHEMA)
         self.sqlite_cursor.execute(DOCUMENTS_SCHEMA)
+        self.sqlite_cursor.execute(JOBS_SCHEMA)
 
         self.sqlite_conn.autocommit
 
@@ -115,4 +140,41 @@ class DatabaseHandler:
 
         params.append(document_id)
         query = f"UPDATE documents SET {', '.join(updates)} WHERE id = ?;"
+        self.sqlite_cursor.execute(query, params)
+
+    def add_job(self, job: Job):
+        """Adds the given job to the job store"""
+        self.sqlite_cursor.execute(
+            "INSERT INTO jobs (id, filename, status) VALUES (?, ?, ?);",
+            (job.id, job.filename, job.status)
+        )
+
+    def get_job(self, job_id: str) -> Job | None:
+        self.sqlite_cursor.execute("SELECT id, filename, status, result FROM jobs WHERE id = ?;", (job_id,))
+        row = self.sqlite_cursor.fetchone()
+        if row:
+            job = Job(filename=row[1])
+            job.id = row[0]
+            job.status = JobStatus(row[2])
+            job.result = row[3]
+            return job
+        else:
+            return None
+    
+    def update_job(self, job_id: int, filename: str = None, result: str = None, status: JobStatus = None):
+        updates = []
+        params = []
+
+        if filename is not None:
+            updates.append("filename = ?")
+            params.append(filename)
+        if result is not None:
+            updates.append("result = ?")
+            params.append(result)
+        if status is not None:
+            updates.append("status = ?")
+            params.append(status)
+
+        params.append(job_id)
+        query = f"UPDATE jobs SET {', '.join(updates)} WHERE id = ?"
         self.sqlite_cursor.execute(query, params)
