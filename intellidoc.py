@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from database import DatabaseHandler
-from ingestion import Job, ingest_document
+from ingestion import Job, ingest_document, JobStatus
 
 import sqlite3
 
@@ -81,6 +81,17 @@ async def upload_file(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    background_tasks.add_task(ingest_document, job.id, file_path, app.state.job_store)
+    document_id = app.state.db.add_document(
+        file.filename, JobStatus.QUEUED, file_path.absolute().as_posix(), collection_id
+    )
+
+    background_tasks.add_task(
+        ingest_document,
+        job.id,
+        file_path,
+        document_id,
+        app.state.job_store,
+        app.state.db,
+    )
 
     return "Great Success!"

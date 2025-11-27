@@ -78,3 +78,41 @@ class DatabaseHandler:
                 id=row[0], name=row[1], created_at=datetime.fromisoformat(row[2])
             )
         return None
+
+    def add_document(
+        self, filename: str, status: str, upload_path: str, collection_id: int
+    ) -> int:
+        """Adds a document to the database"""
+        self.sqlite_cursor.execute(
+            "INSERT INTO documents (filename, status, upload_path, collection_id) VALUES (?, ?, ?, ?);",
+            (filename, status, upload_path, collection_id),
+        )
+        return self.sqlite_cursor.lastrowid
+
+    def modify_document(
+        self,
+        document_id: int,
+        filename: str = None,
+        status: str = None,
+        upload_path: str = None,
+    ):
+        """Modifies an existing document in the database"""
+        updates = []
+        params = []
+
+        if filename is not None:
+            updates.append("filename = ?")
+            params.append(filename)
+        if status is not None:
+            updates.append("status = ?")
+            params.append(status)
+        if upload_path is not None:
+            updates.append("upload_path = ?")
+            params.append(upload_path)
+
+        if not updates:
+            raise ValueError("No fields to update")
+
+        params.append(document_id)
+        query = f"UPDATE documents SET {', '.join(updates)} WHERE id = ?;"
+        self.sqlite_cursor.execute(query, params)
