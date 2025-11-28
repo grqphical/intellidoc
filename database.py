@@ -142,6 +142,21 @@ class DatabaseHandler:
         query = f"UPDATE documents SET {', '.join(updates)} WHERE id = ?;"
         self.sqlite_cursor.execute(query, params)
 
+    def get_document_count(self, collection_id: int) -> int:
+        self.sqlite_cursor.execute("SELECT COUNT(*) FROM documents WHERE collection_id = ?", (collection_id,))
+        return self.sqlite_cursor.fetchone()[0]
+
+    def get_documents(self, id: int) -> list[Document]:
+        self.sqlite_cursor.execute("SELECT id, filename, status FROM documents WHERE collection_id = ?", (id,))
+        return [
+            Document(id=row[0], filename=row[1], status=row[2]) for row in self.sqlite_cursor.fetchall()
+        ]
+
+    def get_document(self) -> Document | None:
+        self.sqlite_cursor.execute("SELECT id, filename, status FROM documents WHERE id = ?", (id,))
+        row = self.sqlite_cursor.fetchone()
+        return Document(id=row[0], filename=row[1], status=row[2])
+
     def add_job(self, job: Job):
         """Adds the given job to the job store"""
         self.sqlite_cursor.execute(

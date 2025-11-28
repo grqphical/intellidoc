@@ -1,0 +1,29 @@
+<table class="min-w-full table-auto border-collapse border border-gray-300" hx-get="/collection/{{collectionId}}/status" hx-swap="outerHTML" hx-trigger="every 2s">
+    <thead>
+        <tr class="bg-gray-100">
+            <th class="px-4 py-2 border border-gray-300 text-left font-medium text-gray-700">Filename</th>
+            <th class="px-4 py-2 border border-gray-300 text-left font-medium text-gray-700">Status</th>
+            <th class="px-4 py-2 border border-gray-300 text-left font-medium text-gray-700"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for document in documents %}
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2 border border-gray-300">
+                {{document.filename}}
+            </td>
+            <td class="px-4 py-2 border border-gray-300">
+                {% if document.status == "queued" or document.status == "processing" %}
+                    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_b2T7{animation:spinner_xe7Q .8s linear infinite}.spinner_YRVV{animation-delay:-.65s}.spinner_c9oY{animation-delay:-.5s}@keyframes spinner_xe7Q{93.75%,100%{r:3px}46.875%{r:.2px}}</style><circle class="spinner_b2T7" cx="4" cy="12" r="3"/><circle class="spinner_b2T7 spinner_YRVV" cx="12" cy="12" r="3"/><circle class="spinner_b2T7 spinner_c9oY" cx="20" cy="12" r="3"/></svg>
+                {% else %}
+                    Processed
+                {% endif %}
+            </td>
+            <td class="px-4 py-2 border border-gray-300">
+                <a href="/documents/{{document.id}}/download">Download</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+

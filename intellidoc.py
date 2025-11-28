@@ -59,21 +59,25 @@ async def get_collection(request: Request, collection_id: int):
     collection = app.state.db.get_collection_by_id(collection_id)
     if collection == None:
         raise HTTPException(status_code=404, detail="Collection Not Found")
+    
 
+    collection_count = app.state.db.get_document_count(collection_id)
+
+    documents = app.state.db.get_documents(collection_id)
     return templates.TemplateResponse(
-        request=request, name="collection.html", context={"collection": collection}
+        request=request, name="collection.html", context={"collection": collection, "collectionCount": collection_count, "documents": documents}
     )
 
 
-@app.post("/api/collection/{collection_id}/upload")
+@app.post("/api/collection/{collection_id}/upload", response_class=HTMLResponse)
 async def upload_file(
-    collection_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...)
+    request: Request, collection_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
     job = Job(filename=file.filename)
     app.state.db.add_job(job)
 
     # save file temporarily on disk
-    temp_dir = Path("temp_uploads")
+    temp_dir = Path("uploads")
     temp_dir.mkdir(exist_ok=True)
     file_path = temp_dir / f"{job.id}_{file.filename}"
 
@@ -92,4 +96,21 @@ async def upload_file(
         app.state.db,
     )
 
-    return "Great Success!"
+    documents = app.state.db.get_documents(collection_id)
+
+    return templates.TemplateResponse(
+        request=request, name="document_list.html", context={"documents": documents, "collectionId": collection_id}
+    )
+
+@app.get("/collection/{collection_id}/status", response_class=HTMLResponse)
+async def get_document_status(
+    request: Request, collection_id: int
+):
+    
+    documents = app.state.db.get_documents(collection_id)
+
+    return templates.TemplateResponse(
+        request=request, name="document_list.html", context={"documents": documents, "collectionId": collection_id}
+    )
+
+

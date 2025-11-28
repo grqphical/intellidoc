@@ -42,7 +42,4 @@ async def ingest_document(
             job.result = str(e)
             db.modify_document(document_id, status=JobStatus.FAILED)
         finally:
-            # Cleanup temp file
-            if file_path.exists():
-                file_path.unlink()
             db.update_job(job_id, status=job.status, result=job.result)
