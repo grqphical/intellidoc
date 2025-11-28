@@ -43,6 +43,7 @@ class Document:
     id: int
     filename: str
     status: str
+    upload_path: str
 
 class JobStatus(str, Enum):
     QUEUED = "queued"
@@ -147,15 +148,15 @@ class DatabaseHandler:
         return self.sqlite_cursor.fetchone()[0]
 
     def get_documents(self, id: int) -> list[Document]:
-        self.sqlite_cursor.execute("SELECT id, filename, status FROM documents WHERE collection_id = ?", (id,))
+        self.sqlite_cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE collection_id = ?", (id,))
         return [
-            Document(id=row[0], filename=row[1], status=row[2]) for row in self.sqlite_cursor.fetchall()
+            Document(id=row[0], filename=row[1], status=row[2], upload_path=row[3]) for row in self.sqlite_cursor.fetchall()
         ]
 
-    def get_document(self) -> Document | None:
-        self.sqlite_cursor.execute("SELECT id, filename, status FROM documents WHERE id = ?", (id,))
+    def get_document(self, id: int) -> Document | None:
+        self.sqlite_cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE id = ?", (id,))
         row = self.sqlite_cursor.fetchone()
-        return Document(id=row[0], filename=row[1], status=row[2])
+        return Document(id=row[0], filename=row[1], status=row[2], upload_path=row[3])
 
     def add_job(self, job: Job):
         """Adds the given job to the job store"""

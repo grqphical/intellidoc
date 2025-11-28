@@ -11,7 +11,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from database import DatabaseHandler, Job, JobStatus
@@ -113,4 +113,11 @@ async def get_document_status(
         request=request, name="document_list.html", context={"documents": documents, "collectionId": collection_id}
     )
 
+@app.get("/documents/{document_id}/download")
+async def download_document(document_id: int):
+    document = app.state.db.get_document(document_id)
 
+    if not document:
+        raise HTTPException(status_code=404, detail='Document Not Found')
+
+    return FileResponse(document.upload_path)
