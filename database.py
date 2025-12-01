@@ -65,7 +65,7 @@ class SqliteDatabase:
 
     def __init__(self):
         self.conn = sqlite3.connect(DATABASE_URL, autocommit=True)
-        self.cursor = self.sqlite_conn.cursor()
+        self.cursor = self.conn.cursor()
 
         self.cursor.execute(COLLECTIONS_SCHEMA)
         self.cursor.execute(DOCUMENTS_SCHEMA)
