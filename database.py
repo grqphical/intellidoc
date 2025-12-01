@@ -60,31 +60,31 @@ class Job:
         self.result = None
 
 
-class DatabaseHandler:
+class SqliteDatabase:
     """Main class to interface with the SQLite Database"""
 
     def __init__(self):
-        self.sqlite_conn = sqlite3.connect(DATABASE_URL, autocommit=True)
-        self.sqlite_cursor = self.sqlite_conn.cursor()
+        self.conn = sqlite3.connect(DATABASE_URL, autocommit=True)
+        self.cursor = self.sqlite_conn.cursor()
 
-        self.sqlite_cursor.execute(COLLECTIONS_SCHEMA)
-        self.sqlite_cursor.execute(DOCUMENTS_SCHEMA)
-        self.sqlite_cursor.execute(JOBS_SCHEMA)
+        self.cursor.execute(COLLECTIONS_SCHEMA)
+        self.cursor.execute(DOCUMENTS_SCHEMA)
+        self.cursor.execute(JOBS_SCHEMA)
 
-        self.sqlite_conn.autocommit
+        self.conn.autocommit
 
     def create_collection(self, name: str):
         """Creates a collection with the given name"""
         current_time = datetime.now()
-        self.sqlite_cursor.execute(
+        self.cursor.execute(
             "INSERT INTO collections (name, created_at) VALUES (?, ?);",
             (name, current_time.isoformat()),
         )
 
     def get_collections(self) -> list[Collection]:
         """Returns all collections in the database"""
-        self.sqlite_cursor.execute("SELECT id, name, created_at FROM collections;")
-        rows = self.sqlite_cursor.fetchall()
+        self.cursor.execute("SELECT id, name, created_at FROM collections;")
+        rows = self.cursor.fetchall()
         return [
             Collection(
                 id=row[0], name=row[1], created_at=datetime.fromisoformat(row[2])
@@ -94,11 +94,11 @@ class DatabaseHandler:
 
     def get_collection_by_id(self, collection_id: int) -> Collection | None:
         """Returns a collection with the given ID. If a collection with the given ID doesn't exist, it simply returns None"""
-        self.sqlite_cursor.execute(
+        self.cursor.execute(
             "SELECT id, name, created_at FROM collections WHERE id = ?;",
             (collection_id,),
         )
-        row = self.sqlite_cursor.fetchone()
+        row = self.cursor.fetchone()
         if row:
             return Collection(
                 id=row[0], name=row[1], created_at=datetime.fromisoformat(row[2])
@@ -109,11 +109,11 @@ class DatabaseHandler:
         self, filename: str, status: str, upload_path: str, collection_id: int
     ) -> int:
         """Adds a document to the database"""
-        self.sqlite_cursor.execute(
+        self.cursor.execute(
             "INSERT INTO documents (filename, status, upload_path, collection_id) VALUES (?, ?, ?, ?);",
             (filename, status, upload_path, collection_id),
         )
-        return self.sqlite_cursor.lastrowid
+        return self.cursor.lastrowid
 
     def modify_document(
         self,
@@ -141,33 +141,33 @@ class DatabaseHandler:
 
         params.append(document_id)
         query = f"UPDATE documents SET {', '.join(updates)} WHERE id = ?;"
-        self.sqlite_cursor.execute(query, params)
+        self.cursor.execute(query, params)
 
     def get_document_count(self, collection_id: int) -> int:
-        self.sqlite_cursor.execute("SELECT COUNT(*) FROM documents WHERE collection_id = ?", (collection_id,))
-        return self.sqlite_cursor.fetchone()[0]
+        self.cursor.execute("SELECT COUNT(*) FROM documents WHERE collection_id = ?", (collection_id,))
+        return self.cursor.fetchone()[0]
 
     def get_documents(self, id: int) -> list[Document]:
-        self.sqlite_cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE collection_id = ?", (id,))
+        self.cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE collection_id = ?", (id,))
         return [
-            Document(id=row[0], filename=row[1], status=row[2], upload_path=row[3]) for row in self.sqlite_cursor.fetchall()
+            Document(id=row[0], filename=row[1], status=row[2], upload_path=row[3]) for row in self.cursor.fetchall()
         ]
 
     def get_document(self, id: int) -> Document | None:
-        self.sqlite_cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE id = ?", (id,))
-        row = self.sqlite_cursor.fetchone()
+        self.cursor.execute("SELECT id, filename, status, upload_path FROM documents WHERE id = ?", (id,))
+        row = self.cursor.fetchone()
         return Document(id=row[0], filename=row[1], status=row[2], upload_path=row[3])
 
     def add_job(self, job: Job):
         """Adds the given job to the job store"""
-        self.sqlite_cursor.execute(
+        self.cursor.execute(
             "INSERT INTO jobs (id, filename, status) VALUES (?, ?, ?);",
             (job.id, job.filename, job.status)
         )
 
     def get_job(self, job_id: str) -> Job | None:
-        self.sqlite_cursor.execute("SELECT id, filename, status, result FROM jobs WHERE id = ?;", (job_id,))
-        row = self.sqlite_cursor.fetchone()
+        self.cursor.execute("SELECT id, filename, status, result FROM jobs WHERE id = ?;", (job_id,))
+        row = self.cursor.fetchone()
         if row:
             job = Job(filename=row[1])
             job.id = row[0]
@@ -193,4 +193,4 @@ class DatabaseHandler:
 
         params.append(job_id)
         query = f"UPDATE jobs SET {', '.join(updates)} WHERE id = ?"
-        self.sqlite_cursor.execute(query, params)
+        self.cursor.execute(query, params)

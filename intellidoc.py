@@ -14,14 +14,14 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from database import DatabaseHandler, Job, JobStatus
+from database import SqliteDatabase, Job, JobStatus
 from ingestion import ingest_document
 
 import sqlite3
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
-app.state.db = DatabaseHandler()
+app.state.sqlite_db = SqliteDatabase()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -31,14 +31,14 @@ templates = Jinja2Templates(directory="templates")
 @app.post("/api/collection")
 async def create_collection(request: Request, name: Annotated[str, Form()]):
     try:
-        app.state.db.create_collection(name)
+        app.state.sqlite_db.create_collection(name)
     except sqlite3.IntegrityError as e:
         # a collection with the same name exists already
         if "UNIQUE constraint failed" in str(e):
             raise HTTPException(
                 status_code=400, detail=f"Collection with name {name} already exists"
             )
-    collections = app.state.db.get_collections()
+    collections = app.state.sqlite_db.get_collections()
     return templates.TemplateResponse(
         request=request,
         name="collection_list.html",
@@ -48,7 +48,7 @@ async def create_collection(request: Request, name: Annotated[str, Form()]):
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    collections = app.state.db.get_collections()
+    collections = app.state.sqlite_db.get_collections()
     return templates.TemplateResponse(
         request=request, name="index.html", context={"collections": collections}
     )
@@ -56,14 +56,14 @@ async def root(request: Request):
 
 @app.get("/collection/{collection_id}", response_class=HTMLResponse)
 async def get_collection(request: Request, collection_id: int):
-    collection = app.state.db.get_collection_by_id(collection_id)
+    collection = app.state.sqlite_db.get_collection_by_id(collection_id)
     if collection == None:
         raise HTTPException(status_code=404, detail="Collection Not Found")
     
 
-    collection_count = app.state.db.get_document_count(collection_id)
+    collection_count = app.state.sqlite_db.get_document_count(collection_id)
 
-    documents = app.state.db.get_documents(collection_id)
+    documents = app.state.sqlite_db.get_documents(collection_id)
     return templates.TemplateResponse(
         request=request, name="collection.html", context={"collection": collection, "collectionCount": collection_count, "documents": documents}
     )
@@ -74,7 +74,7 @@ async def upload_file(
     request: Request, collection_id: int, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
     job = Job(filename=file.filename)
-    app.state.db.add_job(job)
+    app.state.sqlite_db.add_job(job)
 
     # save file temporarily on disk
     temp_dir = Path("uploads")
@@ -84,7 +84,7 @@ async def upload_file(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    document_id = app.state.db.add_document(
+    document_id = app.state.sqlite_db.add_document(
         file.filename, JobStatus.QUEUED, file_path.absolute().as_posix(), collection_id
     )
 
@@ -96,7 +96,7 @@ async def upload_file(
         app.state.db,
     )
 
-    documents = app.state.db.get_documents(collection_id)
+    documents = app.state.sqlite_db.get_documents(collection_id)
 
     return templates.TemplateResponse(
         request=request, name="document_list.html", context={"documents": documents, "collectionId": collection_id}
@@ -107,7 +107,7 @@ async def get_document_status(
     request: Request, collection_id: int
 ):
     
-    documents = app.state.db.get_documents(collection_id)
+    documents = app.state.sqlite_db.get_documents(collection_id)
 
     return templates.TemplateResponse(
         request=request, name="document_list.html", context={"documents": documents, "collectionId": collection_id}
@@ -115,7 +115,7 @@ async def get_document_status(
 
 @app.get("/documents/{document_id}/download")
 async def download_document(document_id: int):
-    document = app.state.db.get_document(document_id)
+    document = app.state.sqlite_db.get_document(document_id)
 
     if not document:
         raise HTTPException(status_code=404, detail='Document Not Found')

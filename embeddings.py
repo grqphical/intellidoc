@@ -1,6 +1,11 @@
 """Script responsible for embedding text and inserting it into the vector database"""
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pathlib import Path
+from sentence_transformers import SentenceTransformer
+
+import asyncio
+
+EMBEDDING_MODEL = "google/embeddinggemma-300m"
 
 class DocumentChunker:
     def __init__(self, chunk_size=512, overlap=50):
@@ -24,3 +29,20 @@ class DocumentChunker:
     def _process_text(self, text: str) -> list[str]:
         return self.text_splitter.split_text(text)
 
+class EmbeddingsGenerator:
+    def __init__(self) -> None:
+        self.model = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True)
+        self.chunker = DocumentChunker()
+
+    async def generate_vectors(self, document_path: Path) -> None:
+        """Chunk the document at the given file path and generate the vectors for it"""
+        text_chunks = self.chunker.process_file(document_path)
+
+        loop = asyncio.get_running_loop()
+
+        vectors = await loop.run_in_executor(
+                None, 
+                lambda: self.model.encode(text_chunks)
+        )
+        return vectors
+        
