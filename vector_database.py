@@ -1,7 +1,7 @@
 """Main class for interfacing with the vector database"""
 import lancedb
 import pyarrow as pa
-
+from typing import List, Dict, Any
 
 class VectorDatabase:
     def __init__(self, db_path: str="./lancedb_data") -> None:
@@ -21,3 +21,8 @@ class VectorDatabase:
             self.table = self.db.open_table("documents")
         except FileNotFoundError:
             self.table = self.db.create_table("documents", schema=self.schema)
+
+    def add_documents(self, vectors: List[Dict[str, Any]]):
+        if not vectors:
+            return
+        self.table.add(vectors)
