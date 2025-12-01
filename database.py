@@ -63,15 +63,8 @@ class Job:
 class SqliteDatabase:
     """Main class to interface with the SQLite Database"""
 
-    def __init__(self):
-        self.conn = sqlite3.connect(DATABASE_URL, autocommit=True)
-        self.cursor = self.conn.cursor()
-
-        self.cursor.execute(COLLECTIONS_SCHEMA)
-        self.cursor.execute(DOCUMENTS_SCHEMA)
-        self.cursor.execute(JOBS_SCHEMA)
-
-        self.conn.autocommit
+    def __init__(self, conn: sqlite3.Connection):
+        self.cursor = conn.cursor()
 
     def create_collection(self, name: str):
         """Creates a collection with the given name"""
