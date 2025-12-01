@@ -6,3 +6,6 @@ tailwind-install:
 	@echo "Downloading TailwindCSS CLI..."
 	@wget https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -O tailwindcss
 	@chmod +x tailwindcss
+
+test:
+	@python3 -m unittest discover -s tests/
